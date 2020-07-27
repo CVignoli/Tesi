@@ -1,0 +1,16 @@
+# train/04758d137.detected.ldmk
+# nb_of_pair key1 value1 key2 value2 ...
+2 position 0.336163,23.511,-1887.61 label 0
+2 position 31.9647,20.0984,-1879.89 label 1
+2 position 49.3763,23.4981,-1864.67 label 2
+2 position 67.048,16.5386,-1879.1 label 3
+2 position 95.1566,16.605,-1887.03 label 4
+2 position 45.9611,-14.9269,-1844.83 label 5
+2 position 28.535,-21.8375,-1873.71 label 6
+2 position 63.5596,-25.4769,-1871.83 label 7
+2 position 45.9792,-29.0078,-1859.47 label 8
+2 position 21.4267,-50.064,-1874.76 label 9
+2 position 67.0799,-53.3857,-1875.31 label 10
+2 position 42.4627,-42.8807,-1860.22 label 11
+2 position 42.4996,-56.8953,-1862.5 label 12
+2 position 42.3871,-81.3112,-1869.29 label 13

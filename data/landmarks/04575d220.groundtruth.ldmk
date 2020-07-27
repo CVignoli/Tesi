@@ -1,0 +1,16 @@
+# test/04575d220.groundtruth.ldmk
+# nb_of_pair key1 value1 key2 value2 ...
+3 position -67.725223,-17.686092,-1398.012121 label 0 description left-exocanthion
+3 position -41.342942,-19.030503,-1390.133901 label 1 description left-endocanthion
+3 position -22.1159820557,-19.7782592773,-1382.29321289 label 2 description nasion
+3 position -4.506816,-23.344783,-1389.057246 label 3 description right-endocanthion
+3 position 23.033482,-24.916494,-1396.299962 label 4 description right-exocanthion
+3 position -25.107821,-53.677544,-1370.969454 label 5 description pronasale
+3 position -43.670057,-61.143132,-1395.184987 label 6 description left-alare
+3 position -5.973585,-64.007495,-1394.463397 label 7 description right-alare
+3 position -25.0878314972,-66.3929901123,-1386.7220459 label 8 description subnasale
+3 position -52.001495,-86.38319,-1404.812263 label 9 description left-mouth-corner
+3 position -1.637026,-89.928926,-1403.236554 label 10 description right-mouth-corner
+3 position -26.065365,-83.671796,-1383.977367 label 11 description upper-lip
+3 position -27.630841,-93.450794,-1390.388874 label 12 description lower-lip
+3 position -25.4882106781,-118.924209595,-1397.07995605 label 13 description pogonion

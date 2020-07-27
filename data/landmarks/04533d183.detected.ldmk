@@ -1,0 +1,16 @@
+# test/04533d183.detected.ldmk
+# nb_of_pair key1 value1 key2 value2 ...
+2 position -105.422,-39.1446,-1470.26 label 0
+2 position -74.0453,-39.2974,-1461.81 label 1
+2 position -56.5762,-32.2452,-1452.1 label 2
+2 position -42.5824,-35.9302,-1464.04 label 3
+2 position -11.0452,-32.2224,-1468.51 label 4
+2 position -56.4504,-70.7565,-1429.46 label 5
+2 position -74.0023,-81.1462,-1456.69 label 6
+2 position -35.5734,-77.7932,-1457.18 label 7
+2 position -52.9333,-84.6696,-1445.1 label 8
+2 position -81.1292,-109.33,-1459.48 label 9
+2 position -28.4629,-105.741,-1461.35 label 10
+2 position -52.9102,-98.5208,-1444.4 label 11
+2 position -49.4798,-112.611,-1446.08 label 12
+2 position -49.4538,-137.258,-1453.05 label 13
