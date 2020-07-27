@@ -1,0 +1,16 @@
+# train/04435d264.detected.ldmk
+# nb_of_pair key1 value1 key2 value2 ...
+2 position -39.6363,-37.3979,-1614.53 label 0
+2 position -8.45893,-37.3963,-1604.42 label 1
+2 position 8.88988,-30.2882,-1593.35 label 2
+2 position 26.432,-30.4715,-1603.04 label 3
+2 position 58.2117,-30.5428,-1606.75 label 4
+2 position 9.19063,-72.4396,-1573.65 label 5
+2 position -8.51862,-76.0451,-1598.09 label 6
+2 position 30.4382,-75.8818,-1594.61 label 7
+2 position 9.26933,-82.9567,-1587.22 label 8
+2 position -11.7769,-103.936,-1602.02 label 9
+2 position 37.1903,-100.66,-1599.88 label 10
+2 position 12.9477,-96.7306,-1583.09 label 11
+2 position 12.9583,-110.806,-1584.34 label 12
+2 position 13.0013,-135.541,-1589.52 label 13

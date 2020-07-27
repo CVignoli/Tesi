@@ -24,7 +24,7 @@ def bidirectionalAssociation(modGT, defShape):
     [mindistsGT, minidxGT] = np.min(D, [], 2)
     threshGlobal = np.mean(mindistsGT) + np.std(mindistsGT)
     toRemGlobal = mindistsGT > threshGlobal
-    [unGT, _, _] = np.unique(minidxGT)  # not logico ~ ???   _ (sol non ci interessa)
+    [unGT, _, _] = np.unique(minidxGT)
 
     modPerm = np.zeros(np.size(defShape))
     for i in range(len(unGT)):
@@ -65,8 +65,8 @@ def reassociateDuplicates(modGT, defShape):
         modTmp[un, :] = []
         # Re-compute distances
         D = cdist(modTmp, df)
-        [_, minidx] = np.min(D)  # not ???
-        [un, iidx, _] = np.unique(minidx)  # not ???
+        [_, minidx] = np.min(D)
+        [un, iidx, _] = np.unique(minidx)
 
         # Store new unique indices and remove from the old unique set
         iidx_n = iidxMiss[iidx]
@@ -112,7 +112,7 @@ idxLandmarks3D = np.delete(idxLandmarks3D, slice(17), 0)
 
 landmarks3D = avgM.get('landmarks3D')
 landmarks3D = np.delete(landmarks3D, slice(17), 0)
-baric_avg = np.mean(avgModel, axis=0)     # controlla sintassi
+baric_avg = np.mean(avgModel, axis=0)
 avgModel = avgModel - npm.repmat(baric_avg, np.size(avgModel, axis=0), 1)
 landmarks3D = landmarks3D - npm.repmat(baric_avg, np.size(landmarks3D, axis=0), 1)
 
