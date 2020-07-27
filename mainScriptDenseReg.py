@@ -100,7 +100,9 @@ meshList = [f for f in meshList if f.endswith('.mat')]
 
 slc = mat73.loadmat('data/SLC_50_1_1.mat')
 components = slc.get('Components')
-Components_res = mat_op().reshape(components)
+aligned_models_data = None
+components_R = mat_op(components, aligned_models_data)
+Components_res = components_R.X_res
 
 # Load 3DMM and Landmarks
 avgM = mat73.loadmat('data/avgModel_bh_1779_NE.mat')  # guardare cosa c'è dentro
