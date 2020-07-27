@@ -105,7 +105,7 @@ components_R = mat_op(components, aligned_models_data)
 Components_res = components_R.X_res
 
 # Load 3DMM and Landmarks
-avgM = mat73.loadmat('data/avgModel_bh_1779_NE.mat')  # guardare cosa c'è dentro
+avgM = mat73.loadmat('data/avgModel_bh_1779_NE.mat')  # guardare cosa c'è dentro ...
 avgModel = avgM.get('avgModel')
 
 # Zero mean 3D model and landmarks
