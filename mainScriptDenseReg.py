@@ -53,7 +53,7 @@ def reassociateDuplicates(modGT, defShape):
     [mindists, minidx] = np.min(D)
     [un, iidx, iun] = np.unique(minidx)
 
-    iidxMiss = np.setdiff1d(np.size(defShape, 1), iidx)  # indici vanno bene??? Vedremo :)
+    iidxMiss = np.setdiff1d(np.size(defShape, axis=0), iidx)  # indici vanno bene??? Vedremo :)
     df = defShape[iidx, :]
 
     modTmp = modGT
@@ -97,6 +97,10 @@ landmarkList = [f for f in landmarkList if f.endswith('.groundtruth.ldmk')]
 meshPath = 'data/models/'
 meshList = os.listdir(meshPath)
 meshList = [f for f in meshList if f.endswith('.mat')]
+meshList2 = []
+for i in range(len(meshList)):
+    meshList2 = meshList2.__add__([meshList[i]])
+    meshList2[i] = meshList2[i][:-4]
 
 slc = mat73.loadmat('data/SLC_50_1_1.mat')
 components = slc.get('Components')
@@ -107,6 +111,11 @@ Components_res = components_R.X_res
 # Load 3DMM and Landmarks
 avgM = mat73.loadmat('data/avgModel_bh_1779_NE.mat')  # guardare cosa c'è dentro ...
 avgModel = avgM.get('avgModel')
+
+model1 = scipy.io.loadmat('data/models/02463d546.mat')
+model2 = scipy.io.loadmat('data/models/04395d192.mat')
+model3 = scipy.io.loadmat('data/models/04681d145.mat')
+models = [model1, model2, model3]
 
 # Zero mean 3D model and landmarks
 idxLandmarks3D = avgM.get('idxLandmarks3D')
@@ -129,41 +138,44 @@ lm3dmmGT_all = lm3dmmGT
 # Compute ring-1 on landmarks
 # compute_vertex_ring = scipy.io.loadmat('toolboxes/toolbox_graph/compute_vertex_ring.m')   #come chiamare metodo matlab? engine, link desktop (da fare dopo)
 # compute_delaunay = scipy.io.loadmat('toolboxes/toolbox_graph/compute_delaunay.m')
-# vring = compute_vertex_ring(compute_delaunay(avgModel))   #daluney scipy.spatial.import delaunay ... qualcosa di simile
+# vring = compute_vertex_ring(compute_delaunay(avgModel))   # scipy.spatial.delaunay ... qualcosa di simile
 
 errLm_final = []
 err_final = []
 missingModels = {}
-"""
+
 for i in range(len(meshList)):
     print('Processing model ' + str(i))
     try:
         mlist = meshList[i]  # load meshlist
         # Find ground-truth landmarks
-        idx = ' '
-        idx = idx.find(meshList[i] in landmarkList)
+        idx = np.nonzero(meshList2[i] in landmarkList)    # non lo so come restituire indice dove meshlist2 si trova in landmarkList
+
         # lmTGT = readGTlandmarks            # reimplementare (?) ??
-        lmTGT[end, :] = []
+        lmTGT = np.zeros((14, 3))             #cazzata ma dal readGT deve uscire 14x3
+        lmTGT = np.delete(lmTGT, 13, 0)
         # Select Landmarks and models Configuration
         lm3dmm = idxLandmarks3D
         lm3dmm_all = lm3dmm
-        lm3dmm = lm3dmm[19, 22, 25, 28, 31, 37, 34, 40, 13]
+        b = [19, 22, 25, 28, 31, 37, 34, 40, 13]
+        lm3dmm = [lm3dmm[i] for i in b]
 
         # Check if target mesh has less points than 3DMM
+        vertex = models[0].get('vertex')                               # metti i alla fine (tengo per confronto MLab)
 
-        if np.size(vertex, 1) < np.size(avgModel, 1)  # cos'è vertex???  #valore all'interno del file .mat (meshlist)
+        if np.size(vertex, axis=0) < np.size(avgModel, axis=0):
             print(str(i) + ' model with less vertices!')
             continue
         # ....................................
 
         # Zero mean GT model
 
-        baric = np.mean(vertex, 1)  # vertex è dentro il data/models -> apri e vedi attributo (vedi buglist foglio)
-        modGT = vertex - npm.repmat(baric, np.size(lmTGT, 1), 1)
+        baric = np.mean(vertex, axis=0)
+        #modGT = vertex - npm.repmat(baric, np.size(lmTGT, axis=0), 1) finchè non risolvo readGT si va poco lontano...
         # ..........................................
-
+        """
         # Find closest vertex in gt model for annotation error
-        lmTGT = lmTGT - npm.repmat(baric, np.size(lmTGT, 1), 1)
+        lmTGT = lmTGT - npm.repmat(baric, np.size(lmTGT, axis=0), 1)
         d = cdist((modGT, lmTGT))
         [mindists, lmidxGT] = np.min(d)
         lmTGT = modGT[lmidxGT, :]
@@ -174,7 +186,7 @@ for i in range(len(meshList)):
 
         # Initialize ICP
         [Ricp, Ticp] = []  # ICP ???????
-        modGT = (Ricp * (modGT) + npm.repmat(Ticp, 1, np.size(modGT, 1)))  # (rivedere trasposte) adattare in base alla trasformazione
+        modGT = (Ricp * (modGT) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))  # (rivedere trasposte) adattare in base alla trasformazione
 
         # Initial Association
         [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
@@ -184,7 +196,7 @@ for i in range(len(meshList)):
 
         # Re-align
 
-        iidx = np.setdiff1d(np.size(defShape, 1), missed)
+        iidx = np.setdiff1d(np.size(defShape, axis=0), missed)
         [A, S, R, trasl] = _3DMM._3DMM.estimate_pose(modGT[minidc[iidx], :], defShape[iidx, :])
         modPerm = _3DMM._3DMM.getProjectedVertex(modPerm, S, R, trasl)  # ' che significa?? TRASPOSTO
         modGT = _3DMM._3DMM.getProjectedVertex(modGT, S, R, trasl)  # Controlla trasposto sopra e sotto
@@ -265,10 +277,12 @@ for i in range(len(meshList)):
         # Compute Final Error .............
         errLm_final = estimateRingError  # va implementata (riga 181)
         # ....................
+        """
     except:
         errorMessage = print('Error somewhere')
+
+        """
         missingModels = [missingModels, meshList[i]]
 
     print('Model ' + str(i) + 'out of ' + str(len(meshList)))
-    
-"""
+        """
