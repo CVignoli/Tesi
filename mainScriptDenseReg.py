@@ -16,6 +16,7 @@ import numpy.matlib as npm
 import sys
 import os
 
+#prova portatile git
 
 def bidirectionalAssociation(modGT, defShape):
     D = cdist(modGT, defShape)
