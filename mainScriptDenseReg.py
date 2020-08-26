@@ -24,6 +24,7 @@ import numpy.matlib as npm
 import sys
 import os
 
+#prova portatile git
 
 def remove_extensions(input_list: List) -> List:
     output_list = []
