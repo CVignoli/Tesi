@@ -1,8 +1,16 @@
+from pathlib import Path
+from typing import List
+
 import _3DMM
 import Matrix_operations as mo
 import util_for_graphic as ufg
-#import matlab.engine
-#eng = matlab.engine.start_matlab()
+import matlab.engine
+
+from matlab_utils import convert_ndarray_to_matlab
+
+eng = matlab.engine.start_matlab()
+eng.addpath(eng.genpath(r"toolboxes"))
+eng.addpath(eng.genpath(r"utils_gen"))
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import icp
@@ -16,6 +24,15 @@ import numpy.matlib as npm
 import sys
 import os
 
+
+def remove_extensions(input_list: List) -> List:
+    output_list = []
+
+    for i in range(len(input_list)):
+        output_list.append(input_list[i])
+        output_list[i] = output_list[i].stem.split(".")[0]
+
+    return output_list
 
 def bidirectionalAssociation(modGT, defShape):
     D = cdist(modGT, defShape)
@@ -80,7 +97,7 @@ def reassociateDuplicates(modGT, defShape):
 mat_op = mo.Matrix_op
 _3DM = _3DMM._3DMM
 
-sys.path.insert(1, './')
+# sys.path.insert(1, './')
 
 # Optimization params
 derr = 0.01
@@ -91,16 +108,10 @@ lambda_all = 1
 debugMesh = True
 
 gtLandmarksPath = 'data/landmarks/'
-landmarkList = os.listdir(gtLandmarksPath)
-landmarkList = [f for f in landmarkList if f.endswith('.groundtruth.ldmk')]
+landmarkList = list(Path(gtLandmarksPath).glob("*.groundtruth.ldmk"))
 
 meshPath = 'data/models/'
-meshList = os.listdir(meshPath)
-meshList = [f for f in meshList if f.endswith('.mat')]
-meshList2 = []
-for i in range(len(meshList)):
-    meshList2 = meshList2.__add__([meshList[i]])
-    meshList2[i] = meshList2[i][:-4]
+meshList = list(Path(meshPath).glob("*.mat"))
 
 slc = mat73.loadmat('data/SLC_50_1_1.mat')
 components = slc.get('Components')
@@ -136,153 +147,151 @@ lm3dmmGT = frgcLm_buLips
 lm3dmmGT_all = lm3dmmGT
 
 # Compute ring-1 on landmarks
-# compute_vertex_ring = scipy.io.loadmat('toolboxes/toolbox_graph/compute_vertex_ring.m')   #come chiamare metodo matlab? engine, link desktop (da fare dopo)
-# compute_delaunay = scipy.io.loadmat('toolboxes/toolbox_graph/compute_delaunay.m')
-# vring = compute_vertex_ring(compute_delaunay(avgModel))   # scipy.spatial.delaunay ... qualcosa di simile
+avgModelMatlab = matlab.double(avgModel.tolist())
+vring = eng.compute_vertex_ring(eng.compute_delaunay(avgModelMatlab))
 
 errLm_final = []
 err_final = []
 missingModels = {}
+basenameMeshList = remove_extensions(meshList)
+basenameLandmarkList = remove_extensions(list(Path(gtLandmarksPath).glob("*.groundtruth.ldmk")))
 
 for i in range(len(meshList)):
     print('Processing model ' + str(i))
-    try:
-        mlist = meshList[i]  # load meshlist
-        # Find ground-truth landmarks
-        idx = np.nonzero(meshList2[i] in landmarkList)    # non lo so come restituire indice dove meshlist2 si trova in landmarkList
+    mlist = meshList[i]  # load meshlist
+    # Find ground-truth landmarks
+    basenameMeshList = remove_extensions(meshList)
 
-        # lmTGT = readGTlandmarks            # reimplementare (?) ??
-        lmTGT = np.zeros((14, 3))             #cazzata ma dal readGT deve uscire 14x3
-        lmTGT = np.delete(lmTGT, 13, 0)
-        # Select Landmarks and models Configuration
-        lm3dmm = idxLandmarks3D
-        lm3dmm_all = lm3dmm
-        b = [19, 22, 25, 28, 31, 37, 34, 40, 13]
-        lm3dmm = [lm3dmm[i] for i in b]
+    idx = basenameLandmarkList.index(basenameMeshList[i])  # non lo so come restituire indice dove meshlist2 si trova in landmarkList
 
-        # Check if target mesh has less points than 3DMM
-        vertex = models[0].get('vertex')                               # metti i alla fine (tengo per confronto MLab)
+    lmTGT, _ = eng.readGTlandmarks(str(landmarkList[idx]), nargout=2)  # reimplementare (?) ??
+    lmTGT = np.array(lmTGT._data.tolist()).reshape((3, 14)).T
+    lmTGT = np.delete(lmTGT, 13, 0)
+    # Select Landmarks and models Configuration
+    lm3dmm = idxLandmarks3D
+    lm3dmm_all = lm3dmm
+    b = [19, 22, 25, 28, 31, 37, 34, 40, 13]
+    lm3dmm = [lm3dmm[i] for i in b]
 
-        if np.size(vertex, axis=0) < np.size(avgModel, axis=0):
-            print(str(i) + ' model with less vertices!')
-            continue
-        # ....................................
+    # Check if target mesh has less points than 3DMM
+    vertex = models[0].get('vertex')  # metti i alla fine (tengo per confronto MLab)
 
-        # Zero mean GT model
+    if np.size(vertex, axis=0) < np.size(avgModel, axis=0):
+        print(f'{i}  model with less vertices!')
+        continue
+    # ....................................
 
-        baric = np.mean(vertex, axis=0)
-        #modGT = vertex - npm.repmat(baric, np.size(lmTGT, axis=0), 1) finchè non risolvo readGT si va poco lontano...
-        # ..........................................
-        """
-        # Find closest vertex in gt model for annotation error
-        lmTGT = lmTGT - npm.repmat(baric, np.size(lmTGT, axis=0), 1)
-        d = cdist((modGT, lmTGT))
-        [mindists, lmidxGT] = np.min(d)
-        lmTGT = modGT[lmidxGT, :]
-        lmidxGT_all = lmidxGT
+    # Zero mean GT model
 
-        # Initialization
-        defShape = avgModel
+    baric = np.mean(vertex, axis=0)
+    modGT = vertex - npm.repmat(baric, np.size(vertex, axis=0), 1) #finchè non risolvo readGT si va poco lontano...
+    # ..........................................
 
-        # Initialize ICP
-        [Ricp, Ticp] = []  # ICP ???????
-        modGT = (Ricp * (modGT) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))  # (rivedere trasposte) adattare in base alla trasformazione
+    # Find closest vertex in gt model for annotation error
+    lmTGT = lmTGT - npm.repmat(baric, np.size(lmTGT, axis=0), 1)
+    d = cdist(modGT, lmTGT)
+    lmidxGT = np.argmin(d, axis=0)
+    mindists = d[lmidxGT]
+    lmTGT = modGT[lmidxGT, :]
+    lmidxGT_all = lmidxGT
+    """
+    # Initialization
+    defShape = avgModel
 
-        # Initial Association
-        [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
+    # Initialize ICP
+    [Ricp, Ticp] = []  # ICP ???????
+    modGT = (Ricp * (modGT) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))  # (rivedere trasposte) adattare in base alla trasformazione
 
-        err_init = []
-        errLm_init = estimateringerror  # va implementata?
+    # Initial Association
+    [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
 
-        # Re-align
+    err_init = []
+    errLm_init = estimateringerror  # va implementata?
 
-        iidx = np.setdiff1d(np.size(defShape, axis=0), missed)
-        [A, S, R, trasl] = _3DMM._3DMM.estimate_pose(modGT[minidc[iidx], :], defShape[iidx, :])
-        modPerm = _3DMM._3DMM.getProjectedVertex(modPerm, S, R, trasl)  # ' che significa?? TRASPOSTO
-        modGT = _3DMM._3DMM.getProjectedVertex(modGT, S, R, trasl)  # Controlla trasposto sopra e sotto
-        print('Mean distance initialization: ' + str(err))
-        # ..........................................................
+    # Re-align
 
-        # NRF ....................................
-        print('Start NRF routine')
-        d = 1
-        t = 1
-        alphas = []  # Keep for Recognition
-        while t < maxIter and d > derr:
-            # Fit the 3dmm
-            alpha = _3DMM._3DMM.alphaEstimation(defShape, modPerm)  # dove li prendo altri parametri?
+    iidx = np.setdiff1d(np.size(defShape, axis=0), missed)
+    [A, S, R, trasl] = _3DMM._3DMM.estimate_pose(modGT[minidc[iidx], :], defShape[iidx, :])
+    modPerm = _3DMM._3DMM.getProjectedVertex(modPerm, S, R, trasl)  # ' che significa?? TRASPOSTO
+    modGT = _3DMM._3DMM.getProjectedVertex(modGT, S, R, trasl)  # Controlla trasposto sopra e sotto
+    print('Mean distance initialization: ' + str(err))
+    # ..........................................................
 
-            defShape = _3DM.deform_3D_shape_fast(np.transpose(defShape), components, alpha)  # Da trasporre
+    # NRF ....................................
+    print('Start NRF routine')
+    d = 1
+    t = 1
+    alphas = []  # Keep for Recognition
+    while t < maxIter and d > derr:
+        # Fit the 3dmm
+        alpha = _3DMM._3DMM.alphaEstimation(defShape, modPerm)  # dove li prendo altri parametri?
 
-            # Re-associate points as average
-            [modPerm, errIter, minidx, missed] = bidirectionalAssociation(modGT, defShape)
+        defShape = _3DM.deform_3D_shape_fast(np.transpose(defShape), components, alpha)  # Da trasporre
 
-            d = np.abs(err - errIter)
-            err = errIter
+        # Re-associate points as average
+        [modPerm, errIter, minidx, missed] = bidirectionalAssociation(modGT, defShape)
 
-            err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modPerm[lm3dmmGT_all, :])))
+        d = np.abs(err - errIter)
+        err = errIter
 
-            print('Mean distance: ' + str(err) + ' - Mean Landmark error - ' + str(err_lm))
+        err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modPerm[lm3dmmGT_all, :])))
 
-            # Iterate
-            t = t + 1
-            # alphas = [alphas alpha]   # che significa??
-        # ...................
+        print('Mean distance: ' + str(err) + ' - Mean Landmark error - ' + str(err_lm))
 
-        # Debug .............
-        if debugMesh:
-            plt.figure()
-            plt.subplot(1, 2, 1)
-            # plot_landMesh dove è implementata?
-            plt.title('NRF')
-            plt.subplot(1, 2, 2)
-            # plot_landMesh
-            plt.title('GT model')
-            plt.pause()
+        # Iterate
+        t = t + 1
+        # alphas = [alphas alpha]   # che significa??
+    # ...................
 
-        print('Done.')
-        # ........................
+    # Debug .............
+    if debugMesh:
+        plt.figure()
+        plt.subplot(1, 2, 1)
+        # plot_landMesh dove è implementata?
+        plt.title('NRF')
+        plt.subplot(1, 2, 2)
+        # plot_landMesh
+        plt.title('GT model')
+        plt.pause()
 
-        # Registered GT model building ...............
-        print('Start Dense Registration routine')
-        modFinal = reassociateDuplicates(modGT, defShape)
-        # ............
-        print('Done!')
+    print('Done.')
+    # ........................
 
-        err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modFinal[lm3dmmGT_all, :])))
-        print('Mean Landmark error - ' + str(err_lm))
+    # Registered GT model building ...............
+    print('Start Dense Registration routine')
+    modFinal = reassociateDuplicates(modGT, defShape)
+    # ............
+    print('Done!')
 
-        # Debug ......................
-        if debugMesh:
-            plt.figure()
-            plt.subplot(1, 2, 1)
-            # plot_landMesh ??
-            plt.title('Registered Model')
-            plt.subplot(1, 2, 2)
-            # plot_landMesh ??
-            plt.title('GT model')
-            plt.figure()
-            plt.subplot(1, 2, 1)
-            # plot_landModel   #dove si trova sta funzione?
-            # view() non ho davvero idea di come chiamarlo...
-            plt.title('Registered Model')
-            plt.subplot(1, 2, 2)
-            # plot_landmodel
-            # view() ??????
-            plt.title('GT model')
-            plt.pause()
-            plt.close()
-        # ..................
+    err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modFinal[lm3dmmGT_all, :])))
+    print('Mean Landmark error - ' + str(err_lm))
 
-        # Compute Final Error .............
-        errLm_final = estimateRingError  # va implementata (riga 181)
-        # ....................
-        """
-    except:
-        errorMessage = print('Error somewhere')
+    # Debug ......................
+    if debugMesh:
+        plt.figure()
+        plt.subplot(1, 2, 1)
+        # plot_landMesh ??
+        plt.title('Registered Model')
+        plt.subplot(1, 2, 2)
+        # plot_landMesh ??
+        plt.title('GT model')
+        plt.figure()
+        plt.subplot(1, 2, 1)
+        # plot_landModel   #dove si trova sta funzione?
+        # view() non ho davvero idea di come chiamarlo...
+        plt.title('Registered Model')
+        plt.subplot(1, 2, 2)
+        # plot_landmodel
+        # view() ??????
+        plt.title('GT model')
+        plt.pause()
+        plt.close()
+    # ..................
 
-        """
-        missingModels = [missingModels, meshList[i]]
+    # Compute Final Error .............
+    errLm_final = estimateRingError  # va implementata (riga 181)
+    # ....................
+    """
+    missingModels = [missingModels, meshList[i]]
 
-    print('Model ' + str(i) + 'out of ' + str(len(meshList)))
-        """
+    print(f'Model {i} out of {len(meshList)}')
