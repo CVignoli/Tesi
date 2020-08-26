@@ -140,7 +140,8 @@ avgModel = avgModel - npm.repmat(baric_avg, np.size(avgModel, axis=0), 1)
 landmarks3D = landmarks3D - npm.repmat(baric_avg, np.size(landmarks3D, axis=0), 1)
 
 # Load GT landmarks configuration
-frgcLm_buLips = mat73.loadmat('data/landmarksFRGC_CVPR20_ver2.mat')
+frgcLm_buLips_gen = mat73.loadmat('data/landmarksFRGC_CVPR20_ver2.mat')
+frgcLm_buLips = frgcLm_buLips_gen.get('frgcLm_buLips')
 
 lm3dmm = idxLandmarks3D
 lm3dmm_all = lm3dmm
@@ -150,6 +151,7 @@ lm3dmmGT_all = lm3dmmGT
 # Compute ring-1 on landmarks
 avgModelMatlab = matlab.double(avgModel.tolist())
 vring = eng.compute_vertex_ring(eng.compute_delaunay(avgModelMatlab))
+vring = vring[lm3dmmGT_all]
 
 errLm_final = []
 err_final = []
