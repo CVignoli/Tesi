@@ -121,7 +121,7 @@ components_R = mat_op(components, aligned_models_data)
 Components_res = components_R.X_res
 
 # Load 3DMM and Landmarks
-avgM = mat73.loadmat('data/avgModel_bh_1779_NE.mat')  # guardare cosa c'è dentro ...
+avgM = mat73.loadmat('data/avgModel_bh_1779_NE.mat')
 avgModel = avgM.get('avgModel')
 
 model1 = scipy.io.loadmat('data/models/02463d546.mat')
@@ -151,7 +151,7 @@ lm3dmmGT_all = lm3dmmGT
 # Compute ring-1 on landmarks
 avgModelMatlab = matlab.double(avgModel.tolist())
 vring = eng.compute_vertex_ring(eng.compute_delaunay(avgModelMatlab))
-vring = vring[lm3dmmGT_all]
+vring = vring[np.size(lm3dmmGT_all)]   #non lo so come viene
 
 errLm_final = []
 err_final = []
@@ -194,17 +194,18 @@ for i in range(len(meshList)):
     lmTGT = lmTGT - npm.repmat(baric, np.size(lmTGT, axis=0), 1)
     d = cdist(modGT, lmTGT)
     lmidxGT = np.argmin(d, axis=0)
-    mindists = d[lmidxGT]
     lmTGT = modGT[lmidxGT, :]
     lmidxGT_all = lmidxGT
-    """
+
     # Initialization
     defShape = avgModel
 
     # Initialize ICP
-    [Ricp, Ticp] = []  # ICP ???????
-    modGT = (Ricp * (modGT) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))  # (rivedere trasposte) adattare in base alla trasformazione
 
+    [Ricp, Ticp] = icp.icp(defShape, modGT)
+
+    modGT = np.transpose(Ricp * (modGT.T) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))  # (rivedere trasposte) adattare in base alla trasformazione
+    """
     # Initial Association
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
 

@@ -57,7 +57,7 @@ def nearest_neighbor(src, dst):
     distances = all_dists[np.arange(all_dists.shape[0]), indices]
     return distances, indices
 
-def icp(A, B, init_pose=None, max_iterations=20, tolerance=0.001):
+def icp(A, B, init_pose=None, max_iterations=15, tolerance=0.001):
     '''
     The Iterative Closest Point method
     Input:
