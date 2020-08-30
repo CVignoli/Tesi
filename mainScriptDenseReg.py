@@ -203,7 +203,7 @@ for i in range(len(meshList)):
     # Initial ICP
 
     [Ricp, Ticp] = icp.icp(defShape, modGT)
-    modGT = np.transpose(Ricp * (modGT.T) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))  # (rivedere trasposte) adattare in base alla trasformazione
+    modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp,np.size(modGT, axis=0),1)))
     """
     # Find noseTip
     
