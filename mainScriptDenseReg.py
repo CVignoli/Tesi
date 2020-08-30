@@ -165,9 +165,9 @@ for i in range(len(meshList)):
     # Find ground-truth landmarks
     basenameMeshList = remove_extensions(meshList)
 
-    idx = basenameLandmarkList.index(basenameMeshList[i])  # non lo so come restituire indice dove meshlist2 si trova in landmarkList
+    idx = basenameLandmarkList.index(basenameMeshList[i])
 
-    lmTGT, _ = eng.readGTlandmarks(str(landmarkList[idx]), nargout=2)  # reimplementare (?) ??
+    lmTGT, _ = eng.readGTlandmarks(str(landmarkList[idx]), nargout=2)
     lmTGT = np.array(lmTGT._data.tolist()).reshape((3, 14)).T
     lmTGT = np.delete(lmTGT, 13, 0)
     # Select Landmarks and models Configuration
@@ -187,7 +187,7 @@ for i in range(len(meshList)):
     # Zero mean GT model
 
     baric = np.mean(vertex, axis=0)
-    modGT = vertex - npm.repmat(baric, np.size(vertex, axis=0), 1) #finchè non risolvo readGT si va poco lontano...
+    modGT = vertex - npm.repmat(baric, np.size(vertex, axis=0), 1)
     # ..........................................
 
     # Find closest vertex in gt model for annotation error
@@ -200,17 +200,26 @@ for i in range(len(meshList)):
     # Initialization
     defShape = avgModel
 
-    # Initialize ICP
+    # Initial ICP
 
     [Ricp, Ticp] = icp.icp(defShape, modGT)
-
     modGT = np.transpose(Ricp * (modGT.T) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))  # (rivedere trasposte) adattare in base alla trasformazione
     """
+    # Find noseTip
+    
+    nt = np.where(modGT[:, 3) == np.max(modGT[:, 3]))
+    ntTrasl = avgModel[lm3dmmGT[6], :] - modGT[nt, :]
+    modGT = modGT + ntTrasl
+    
+    #Refine ICP
+    
+    [Ricp, Ticp] = icp.icp(defShape, modGT)
+    modGT = np.transpose(Ricp * (modGT.T) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))
+    
     # Initial Association
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
-
-    err_init = []
-    errLm_init = estimateringerror  # va implementata?
+    err_init = err
+    errLm_init = eng.estimateringerror  # Uso quella di Matlab
 
     # Re-align
 
@@ -229,7 +238,6 @@ for i in range(len(meshList)):
     while t < maxIter and d > derr:
         # Fit the 3dmm
         alpha = _3DMM._3DMM.alphaEstimation(defShape, modPerm)  # dove li prendo altri parametri?
-
         defShape = _3DM.deform_3D_shape_fast(np.transpose(defShape), components, alpha)  # Da trasporre
 
         # Re-associate points as average
@@ -251,13 +259,13 @@ for i in range(len(meshList)):
     if debugMesh:
         plt.figure()
         plt.subplot(1, 2, 1)
-        # plot_landMesh dove è implementata?
+        # plot_landMesh dove è implementata? eng.
         plt.title('NRF')
         plt.subplot(1, 2, 2)
-        # plot_landMesh
+        # plot_landMesh eng.
         plt.title('GT model')
         plt.pause()
-
+        #eng.close
     print('Done.')
     # ........................
 
