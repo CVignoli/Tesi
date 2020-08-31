@@ -13,7 +13,6 @@ eng.addpath(eng.genpath(r"toolboxes"))
 eng.addpath(eng.genpath(r"utils_gen"))
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import icp
 import glob
 import mat73
 import scipy.io
@@ -147,11 +146,13 @@ lm3dmm = idxLandmarks3D
 lm3dmm_all = lm3dmm
 lm3dmmGT = frgcLm_buLips
 lm3dmmGT_all = lm3dmmGT
+lm3dmmGT_all_vring = lm3dmmGT_all - 1
 
 # Compute ring-1 on landmarks
 avgModelMatlab = matlab.double(avgModel.tolist())
 vring = eng.compute_vertex_ring(eng.compute_delaunay(avgModelMatlab))
-vring = vring[np.size(lm3dmmGT_all)]   #non lo so come viene
+vring = np.array(vring)
+vring = vring[lm3dmmGT_all_vring.astype(int)]
 
 errLm_final = []
 err_final = []
@@ -201,9 +202,12 @@ for i in range(len(meshList)):
     defShape = avgModel
 
     # Initial ICP
-
-    [Ricp, Ticp] = icp.icp(defShape, modGT)
-    modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp,np.size(modGT, axis=0),1)))
+    defShape_T = defShape.T
+    modGT_T = modGT.T
+    scipy.io.savemat('defShape_T.mat', {"defShape_T": defShape_T})
+    scipy.io.savemat('modGT_T.mat', {"modGT_T": modGT_T})
+    [Ricp, Ticp] = eng.icp(scipy.io.loadmat('defShape_T.mat'),scipy.io.loadmat('modGT_T.mat'), 15,'Matching', 'kDtree', 'Minimize', 'plane')
+    modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
     """
     # Find noseTip
     
