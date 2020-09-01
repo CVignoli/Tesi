@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import List
 
+import matplotlib
+import notebook as notebook
+
 import _3DMM
 import Matrix_operations as mo
 import util_for_graphic as ufg
@@ -201,12 +204,22 @@ for i in range(len(meshList)):
     # Initialization
     defShape = avgModel
 
+
+    ax = plt.axes(projection='3d')
+
+    x = [defShape[:, 0]]
+    y = [defShape[:, 1]]
+    z = [defShape[:, 2]]
+
+    ax.scatter3D(x,y,z, c=z, cmap='Greens')
+    plt.show()
+
     # Initial ICP
     defShape_T = defShape.T
     modGT_T = modGT.T
-    scipy.io.savemat('defShape_T.mat', {"defShape_T": defShape_T})
-    scipy.io.savemat('modGT_T.mat', {"modGT_T": modGT_T})
-    [Ricp, Ticp] = eng.icp(scipy.io.loadmat('defShape_T.mat'),scipy.io.loadmat('modGT_T.mat'), 15,'Matching', 'kDtree', 'Minimize', 'plane')
+    defShape_T_matlab = matlab.double(defShape_T.tolist())
+    modGT_T_matlab = matlab.double(modGT_T.tolist())
+    [Ricp, Ticp] = eng.icp(defShape_T_matlab, modGT_T_matlab)
     modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
     """
     # Find noseTip
