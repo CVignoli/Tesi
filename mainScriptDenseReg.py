@@ -16,6 +16,7 @@ eng.addpath(eng.genpath(r"toolboxes"))
 eng.addpath(eng.genpath(r"utils_gen"))
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+import icp
 import glob
 import mat73
 import scipy.io
@@ -203,7 +204,7 @@ for i in range(len(meshList)):
 
     # Initialization
     defShape = avgModel
-
+    """
 
     ax = plt.axes(projection='3d')
 
@@ -213,25 +214,36 @@ for i in range(len(meshList)):
 
     ax.scatter3D(x,y,z, c=z, cmap='Greens')
     plt.show()
-
+    """
     # Initial ICP
     defShape_T = defShape.T
     modGT_T = modGT.T
     defShape_T_matlab = matlab.double(defShape_T.tolist())
     modGT_T_matlab = matlab.double(modGT_T.tolist())
-    [Ricp, Ticp] = eng.icp(defShape_T_matlab, modGT_T_matlab)
+    [Ricp, Ticp] = icp.icp(modGT, defShape)
     modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
+    """
+    ax = plt.axes(projection='3d')
+
+    x = [modGT[:, 0]]
+    y = [modGT[:, 1]]
+    z = [modGT[:, 2]]
+
+    ax.scatter3D(x, y, z, c=z, cmap='Greens')
+    plt.show()
     """
     # Find noseTip
     
-    nt = np.where(modGT[:, 3) == np.max(modGT[:, 3]))
-    ntTrasl = avgModel[lm3dmmGT[6], :] - modGT[nt, :]
+    nt = np.where(modGT[:, 2] == np.max(modGT[:, 2]))
+    ntTrasl = avgModel[int(lm3dmmGT[5]), :] - modGT[int(nt[0]), :]
     modGT = modGT + ntTrasl
     
     #Refine ICP
-    
-    [Ricp, Ticp] = icp.icp(defShape, modGT)
-    modGT = np.transpose(Ricp * (modGT.T) + npm.repmat(Ticp, 1, np.size(modGT, axis=0)))
+
+    [Ricp, Ticp] = icp.icp(modGT, defShape)
+    modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
+
+    """
     
     # Initial Association
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
