@@ -40,16 +40,17 @@ def remove_extensions(input_list: List) -> List:
 
 def bidirectionalAssociation(modGT, defShape):
     D = cdist(modGT, defShape)
-    [mindists, minidx] = np.min(D)
-
-    [mindistsGT, minidxGT] = np.min(D, [], 2)
+    mindists = np.amin(D, axis=0)
+    minidx = np.argmin(D, axis=0)
+    mindistsGT = np.amin(D, axis=1)
+    minidxGT = np.argmin(D, axis=1)
     threshGlobal = np.mean(mindistsGT) + np.std(mindistsGT)
     toRemGlobal = mindistsGT > threshGlobal
-    [unGT, _, _] = np.unique(minidxGT)
+    unGT = np.unique(minidxGT)
 
-    modPerm = np.zeros(np.size(defShape))
+    modPerm = np.zeros(np.shape(defShape))
     for i in range(len(unGT)):
-        kk = np.nonzero(mindistsGT == unGT[i])
+        kk = np.where(minidxGT == unGT[i])
         thresh = np.mean(mindistsGT[kk]) + np.std(mindistsGT[kk])
         toRem = kk[mindistsGT[kk] > thresh]
         toRem = [toRem, toRemGlobal]
