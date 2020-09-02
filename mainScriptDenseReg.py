@@ -216,10 +216,7 @@ for i in range(len(meshList)):
     plt.show()
     """
     # Initial ICP
-    defShape_T = defShape.T
-    modGT_T = modGT.T
-    defShape_T_matlab = matlab.double(defShape_T.tolist())
-    modGT_T_matlab = matlab.double(modGT_T.tolist())
+
     [Ricp, Ticp] = icp.icp(modGT, defShape)
     modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
     """
@@ -242,14 +239,12 @@ for i in range(len(meshList)):
 
     [Ricp, Ticp] = icp.icp(modGT, defShape)
     modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
-
-    """
     
     # Initial Association
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
     err_init = err
     errLm_init = eng.estimateringerror  # Uso quella di Matlab
-
+    """
     # Re-align
 
     iidx = np.setdiff1d(np.size(defShape, axis=0), missed)
