@@ -46,21 +46,24 @@ def bidirectionalAssociation(modGT, defShape):
     minidxGT = np.argmin(D, axis=1)
     threshGlobal = np.mean(mindistsGT) + np.std(mindistsGT)
     toRemGlobal = mindistsGT > threshGlobal
+    toRemGlobal =toRemGlobal*1
     unGT = np.unique(minidxGT)
 
     modPerm = np.zeros(np.shape(defShape))
     for i in range(len(unGT)):
         kk = np.where(minidxGT == unGT[i])
+        kk = np.asarray(kk)
         thresh = np.mean(mindistsGT[kk]) + np.std(mindistsGT[kk])
         toRem = kk[mindistsGT[kk] > thresh]
-        toRem = [toRem, toRemGlobal]
+        toRem = np.concatenate((toRem, toRemGlobal))
         kk = np.setdiff1d(kk, toRem)
         if len(kk) > 1:
             modPerm[unGT[i], :] = np.mean(modGT[kk, :])
         elif len(kk) == 1:
             modPerm[unGT[i], :] = modGT[kk, :]
 
-    missed = np.nonzero(np.sum(modPerm, 2) == 0)
+    missed = np.nonzero(np.sum(modPerm, 1) == 0)
+    missed = np.asarray(missed)
     modPerm[missed, :] = modGT[minidx[missed], :]
 
     err = np.mean(mindists)
