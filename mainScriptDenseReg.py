@@ -266,9 +266,8 @@ for i in range(len(meshList)):
     while t < maxIter and d > derr:
         # Fit the 3dmm
         alpha = _3DMM.alphaEstimation_fast_3D(defShape, modPerm, Components_res, np.arange(1, 6705), weights, lambda_all)
+        defShape = np.transpose(_3DMM.deform_3D_shape_fast(np.transpose(defShape), components, alpha))
         """
-        defShape = _3DM.deform_3D_shape_fast(np.transpose(defShape), components, alpha)  # Da trasporre
-
         # Re-associate points as average
         [modPerm, errIter, minidx, missed] = bidirectionalAssociation(modGT, defShape)
 
