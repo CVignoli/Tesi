@@ -263,26 +263,28 @@ for i in range(len(meshList)):
     d = 1
     t = 1
     alphas = []  # Keep for Recognition
+    alphas.append([])
     while t < maxIter and d > derr:
         # Fit the 3dmm
         alpha = _3DMM.alphaEstimation_fast_3D(defShape, modPerm, Components_res, np.arange(1, 6705), weights, lambda_all)
         defShape = np.transpose(_3DMM.deform_3D_shape_fast(np.transpose(defShape), components, alpha))
-        """
+
         # Re-associate points as average
         [modPerm, errIter, minidx, missed] = bidirectionalAssociation(modGT, defShape)
-
         d = np.abs(err - errIter)
         err = errIter
 
-        err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modPerm[lm3dmmGT_all, :])))
+        err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modPerm[lm3dmmGT_all.astype(int), :])))
 
         print('Mean distance: ' + str(err) + ' - Mean Landmark error - ' + str(err_lm))
 
         # Iterate
         t = t + 1
-        # alphas = [alphas alpha]   # che significa??
+        #alphas = np.append(alphas, alpha, axis=1)
+        #alphas = np.append(alphas, alpha, axis=1)
+        #alphas = np.append(alphas, alpha, axis=1)
     # ...................
-
+    """
     # Debug .............
     if debugMesh:
         plt.figure()
