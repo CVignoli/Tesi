@@ -247,7 +247,6 @@ for i in range(len(meshList)):
     # Initial Association
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
     err_init = err
-    errLm_init = eng.estimateringerror  # Uso quella di Matlab
     """
     # Re-align
 
