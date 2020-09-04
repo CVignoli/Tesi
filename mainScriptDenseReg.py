@@ -123,6 +123,7 @@ meshList = list(Path(meshPath).glob("*.mat"))
 
 slc = mat73.loadmat('data/SLC_50_1_1.mat')
 components = slc.get('Components')
+weights = slc.get('Weights')
 aligned_models_data = None
 components_R = mat_op(components, aligned_models_data)
 Components_res = components_R.X_res
@@ -264,7 +265,7 @@ for i in range(len(meshList)):
     alphas = []  # Keep for Recognition
     while t < maxIter and d > derr:
         # Fit the 3dmm
-        alpha = _3DMM.alphaEstimation(defShape, modPerm)  # dove li prendo altri parametri?
+        alpha = _3DMM.alphaEstimation_fast_3D(defShape, modPerm, Components_res, np.arange(1, 6705), weights, lambda_all)
         """
         defShape = _3DM.deform_3D_shape_fast(np.transpose(defShape), components, alpha)  # Da trasporre
 
