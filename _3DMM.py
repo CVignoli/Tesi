@@ -73,7 +73,7 @@ class _3DMM:
     def getProjectedVertex(self, vertex, S, R, t):
         _vertex = self.transVertex(vertex)
         rotPc = np.transpose(R.dot(_vertex))
-        t = np.reshape(t, (2, 1), order='F')
+        t = np.reshape(t, (3, 1), order='F')
         return S.dot(np.transpose(rotPc)) + np.tile(t, (1, rotPc.shape[0]))
 
     def transVertex(self, vertex):

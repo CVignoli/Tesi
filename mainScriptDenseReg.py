@@ -103,7 +103,7 @@ def reassociateDuplicates(modGT, defShape):
 
 
 mat_op = mo.Matrix_op
-_3DM = _3DMM._3DMM
+_3DMM = _3DMM._3DMM()
 
 # sys.path.insert(1, './')
 
@@ -247,13 +247,13 @@ for i in range(len(meshList)):
     # Initial Association
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
     err_init = err
-    """
+
     # Re-align
 
-    iidx = np.setdiff1d(np.size(defShape, axis=0), missed)
-    [A, S, R, trasl] = _3DMM._3DMM.estimate_pose(modGT[minidc[iidx], :], defShape[iidx, :])
-    modPerm = _3DMM._3DMM.getProjectedVertex(modPerm, S, R, trasl)  # ' che significa?? TRASPOSTO
-    modGT = _3DMM._3DMM.getProjectedVertex(modGT, S, R, trasl)  # Controlla trasposto sopra e sotto
+    iidx = np.setdiff1d(np.arange(1, np.size(defShape, 0)), missed)
+    [A, S, R, trasl] = _3DMM.estimate_pose(modGT[minidx[iidx], :], defShape[iidx, :])
+    modPerm = np.transpose(_3DMM.getProjectedVertex(modPerm, S, R, trasl))
+    modGT = np.transpose(_3DMM.getProjectedVertex(modGT, S, R, trasl))
     print('Mean distance initialization: ' + str(err))
     # ..........................................................
 
@@ -264,7 +264,8 @@ for i in range(len(meshList)):
     alphas = []  # Keep for Recognition
     while t < maxIter and d > derr:
         # Fit the 3dmm
-        alpha = _3DMM._3DMM.alphaEstimation(defShape, modPerm)  # dove li prendo altri parametri?
+        alpha = _3DMM.alphaEstimation(defShape, modPerm)  # dove li prendo altri parametri?
+        """
         defShape = _3DM.deform_3D_shape_fast(np.transpose(defShape), components, alpha)  # Da trasporre
 
         # Re-associate points as average
