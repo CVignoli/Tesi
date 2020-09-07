@@ -113,7 +113,7 @@ class _3DMM:
         Y = np.zeros((X.shape[0], Components_res.shape[2]))
 
         for c in range(Components_res.shape[2]):
-            vect = Components_res[id_landmarks_3D-1, :, c].reshape(landImage.shape[0], 3, order='F')
+            vect = Components_res[id_landmarks_3D, :, c].reshape(landImage.shape[0], 3, order='F')
             Y[:, c] = vect.flatten(order='F')
         if _lambda == 0:
             Alpha = Y.divide(X)

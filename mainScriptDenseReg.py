@@ -46,7 +46,7 @@ def bidirectionalAssociation(modGT, defShape):
     minidxGT = np.argmin(D, axis=1)
     threshGlobal = np.mean(mindistsGT) + np.std(mindistsGT)
     toRemGlobal = mindistsGT > threshGlobal
-    toRemGlobal =toRemGlobal*1
+    idxGlobal = np.where(toRemGlobal)[0]
     unGT = np.unique(minidxGT)
 
     modPerm = np.zeros(np.shape(defShape))
@@ -55,10 +55,10 @@ def bidirectionalAssociation(modGT, defShape):
         kk = np.asarray(kk)
         thresh = np.mean(mindistsGT[kk]) + np.std(mindistsGT[kk])
         toRem = kk[mindistsGT[kk] > thresh]
-        toRem = np.concatenate((toRem, toRemGlobal))
+        toRem = np.concatenate((toRem, idxGlobal))
         kk = np.setdiff1d(kk, toRem)
         if len(kk) > 1:
-            modPerm[unGT[i], :] = np.mean(modGT[kk, :])
+            modPerm[unGT[i], :] = np.mean(modGT[kk, :], axis=0)
         elif len(kk) == 1:
             modPerm[unGT[i], :] = modGT[kk, :]
 
@@ -266,8 +266,17 @@ for i in range(len(meshList)):
     alphas.append([])
     while t < maxIter and d > derr:
         # Fit the 3dmm
-        alpha = _3DMM.alphaEstimation_fast_3D(defShape, modPerm, Components_res, np.arange(1, 6705), weights, lambda_all)
+        alpha = _3DMM.alphaEstimation_fast_3D(defShape, modPerm, Components_res, np.arange(0, 6704), weights, lambda_all)
         defShape = np.transpose(_3DMM.deform_3D_shape_fast(np.transpose(defShape), components, alpha))
+
+        ax = plt.axes(projection='3d')
+
+        x = [defShape[:, 0]]
+        y = [defShape[:, 1]]
+        z = [defShape[:, 2]]
+
+        ax.scatter3D(x, y, z, c=z, cmap='Greens')
+        plt.show()
 
         # Re-associate points as average
         [modPerm, errIter, minidx, missed] = bidirectionalAssociation(modGT, defShape)
