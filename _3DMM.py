@@ -108,7 +108,7 @@ class _3DMM:
 
     def alphaEstimation_fast_3D(self, landImage, projLandModel, Components_res, id_landmarks_3D, Weights, _lambda):
         Weights = np.reshape(Weights, (Weights.shape[0], 1))
-        X = landImage - projLandModel
+        X = projLandModel - landImage
         X = X.flatten(order='F')
         Y = np.zeros((X.shape[0], Components_res.shape[2]))
 

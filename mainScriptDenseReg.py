@@ -182,7 +182,7 @@ basenameLandmarkList = remove_extensions(list(Path(gtLandmarksPath).glob("*.grou
 
 for i in range(len(meshList)):
     print('Processing model ' + str(i))
-    mlist = meshList[i]  # load meshlist
+    mlist = meshList[i]
     # Find ground-truth landmarks
     basenameMeshList = remove_extensions(meshList)
 
@@ -198,7 +198,7 @@ for i in range(len(meshList)):
     lm3dmm = [lm3dmm[i] for i in b]
 
     # Check if target mesh has less points than 3DMM
-    vertex = models[0].get('vertex')  # metti i alla fine (tengo per confronto MLab)
+    vertex = models[i].get('vertex')
 
     if np.size(vertex, axis=0) < np.size(avgModel, axis=0):
         print(f'{i}  model with less vertices!')
