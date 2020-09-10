@@ -113,6 +113,11 @@ def draw_registration_result(source, target, transformation):
     o3d.visualization.draw_geometries([source_temp, target_temp])
 
 
+def draw_point_cloud(source, target):
+    source.paint_uniform_color([1, 0, 0])
+    target.paint_uniform_color([0, 0, 1])
+    o3d.visualization.draw_geometries([source, target])
+
 mat_op = mo.Matrix_op
 _3DMM = _3DMM._3DMM()
 
@@ -349,19 +354,14 @@ for i in range(len(meshList)):
         #alphas = np.append(alphas, alpha, axis=1)
         #alphas = np.append(alphas, alpha, axis=1)
     # ...................
-    """
+
+
     # Debug .............
-    if debugMesh:
-        plt.figure()
-        plt.subplot(1, 2, 1)
-        # plot_landMesh dove è implementata? eng.
-        plt.title('NRF')
-        plt.subplot(1, 2, 2)
-        # plot_landMesh eng.
-        plt.title('GT model')
-        plt.pause()
-        #eng.close
-    print('Done.')
+    mGT3 = o3d.geometry.PointCloud()
+    mGT3.points = o3d.utility.Vector3dVector(modGT)
+    o3d.io.write_point_cloud("dati pc/modGT3.ply", mGT3)
+    draw_point_cloud(mGT3, dShape)
+    print('Figure 1: modGT in red and defShape in blue')
     # ........................
 
     # Registered GT model building ...............
@@ -374,31 +374,13 @@ for i in range(len(meshList)):
     print('Mean Landmark error - ' + str(err_lm))
 
     # Debug ......................
-    if debugMesh:
-        plt.figure()
-        plt.subplot(1, 2, 1)
-        # plot_landMesh ??
-        plt.title('Registered Model')
-        plt.subplot(1, 2, 2)
-        # plot_landMesh ??
-        plt.title('GT model')
-        plt.figure()
-        plt.subplot(1, 2, 1)
-        # plot_landModel   #dove si trova sta funzione?
-        # view() non ho davvero idea di come chiamarlo...
-        plt.title('Registered Model')
-        plt.subplot(1, 2, 2)
-        # plot_landmodel
-        # view() ??????
-        plt.title('GT model')
-        plt.pause()
-        plt.close()
+
     # ..................
 
     # Compute Final Error .............
-    errLm_final = estimateRingError  # va implementata (riga 181)
+    #errLm_final = estimateRingError  # va implementata (riga 181)
     # ....................
-    """
+
     missingModels = [missingModels, meshList[i]]
 
-    print(f'Model {i} out of {len(meshList)}')
+    print(f'Model {i} out of {len(meshList)-1}')
