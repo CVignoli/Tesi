@@ -16,7 +16,6 @@ eng.addpath(eng.genpath(r"toolboxes"))
 eng.addpath(eng.genpath(r"utils_gen"))
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import icp
 import glob
 import copy
 import mat73
