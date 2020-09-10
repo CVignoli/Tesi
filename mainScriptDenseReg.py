@@ -18,8 +18,10 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import icp
 import glob
+import copy
 import mat73
 import scipy.io
+import open3d as o3d
 import h5py
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -100,6 +102,16 @@ def reassociateDuplicates(modGT, defShape):
 
     err = np.mean(mindists)
     return modPerm, err
+
+
+def draw_registration_result(source, target, transformation):
+    source_temp = copy.deepcopy(source)
+    target_temp = copy.deepcopy(target)
+    source_temp.paint_uniform_color([1, 0.706, 0])
+    target_temp.paint_uniform_color([0, 0.651, 0.929])
+    source_temp.transform(transformation)
+    #o3d.visualization.draw_geometries([source_temp, target_temp], zoom=0.4459, front=[0.9288, -0.2951, -0.2242], lookat=[1.6784, 2.0612, 1.4451], up=[-0.3402, -0.9189, -0.1996])
+    o3d.visualization.draw_geometries([source_temp, target_temp])
 
 
 mat_op = mo.Matrix_op
@@ -208,30 +220,48 @@ for i in range(len(meshList)):
     lmidxGT_all = lmidxGT
 
     # Initialization
+
     defShape = avgModel
+
+    # Initial ICP
+    dShape = o3d.geometry.PointCloud()
+    dShape.points = o3d.utility.Vector3dVector(defShape)
+    o3d.io.write_point_cloud("dati pc/defShape.ply", dShape)
+
+    mGT = o3d.geometry.PointCloud()
+    mGT.points = o3d.utility.Vector3dVector(modGT)
+    o3d.io.write_point_cloud("dati pc/modGT.ply", mGT)
+    icp_result = o3d.registration.registration_icp(mGT, dShape, 15)
+    #draw_registration_result(mGT, dShape, icp_result.transformation)
+    transf_vec = np.asarray(icp_result.transformation)
+    Ricp = transf_vec[0:3, 0:3]
+    Ticp = transf_vec[0:3, 3]
+    modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
+    """
+    #see for results
+    
+    mGT1 = o3d.geometry.PointCloud()
+    mGT1.points = o3d.utility.Vector3dVector(modGT)
+    o3d.io.write_point_cloud("dati pc/modGT1.ply", mGT1)
+    #draw_registration_result(mGT1, dShape, icp_result.transformation)
     """
 
+    """
+    fig = plt.figure()
     ax = plt.axes(projection='3d')
 
     x = [defShape[:, 0]]
     y = [defShape[:, 1]]
     z = [defShape[:, 2]]
 
-    ax.scatter3D(x,y,z, c=z, cmap='Greens')
-    plt.show()
-    """
-    # Initial ICP
+    ax.scatter3D(x,y,z, color='r')
 
-    [Ricp, Ticp] = icp.icp(modGT, defShape)
-    modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
-    """
-    ax = plt.axes(projection='3d')
 
-    x = [modGT[:, 0]]
-    y = [modGT[:, 1]]
-    z = [modGT[:, 2]]
+    x1 = [modGT[:, 0]]
+    y1 = [modGT[:, 1]]
+    z1 = [modGT[:, 2]]
 
-    ax.scatter3D(x, y, z, c=z, cmap='Greens')
+    ax.scatter3D(x1, y1, z1, color='b')
     plt.show()
     """
     # Find noseTip
@@ -241,10 +271,37 @@ for i in range(len(meshList)):
     modGT = modGT + ntTrasl
     
     #Refine ICP
-
-    [Ricp, Ticp] = icp.icp(modGT, defShape)
+    mGT1 = o3d.geometry.PointCloud()
+    mGT1.points = o3d.utility.Vector3dVector(modGT)
+    o3d.io.write_point_cloud("dati pc/modGT1.ply", mGT1)
+    icp_result = o3d.registration.registration_icp(mGT1, dShape, 15)
+    # draw_registration_result(mGT, dShape, icp_result.transformation)
+    transf_vec = np.asarray(icp_result.transformation)
+    Ricp = transf_vec[0:3, 0:3]
+    Ticp = transf_vec[0:3, 3]
     modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
-    
+    mGT2 = o3d.geometry.PointCloud()
+    mGT2.points = o3d.utility.Vector3dVector(modGT)
+    o3d.io.write_point_cloud("dati pc/modGT2.ply", mGT2)
+
+    """
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+
+    x = [defShape[:, 0]]
+    y = [defShape[:, 1]]
+    z = [defShape[:, 2]]
+
+    ax.scatter3D(x,y,z, color='r')
+
+
+    x1 = [modGT[:, 0]]
+    y1 = [modGT[:, 1]]
+    z1 = [modGT[:, 2]]
+
+    ax.scatter3D(x1, y1, z1, color='b')
+    plt.show()
+    """
     # Initial Association
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
     err_init = err
@@ -268,7 +325,7 @@ for i in range(len(meshList)):
         # Fit the 3dmm
         alpha = _3DMM.alphaEstimation_fast_3D(defShape, modPerm, Components_res, np.arange(0, 6704), weights, lambda_all)
         defShape = np.transpose(_3DMM.deform_3D_shape_fast(np.transpose(defShape), components, alpha))
-
+        """
         ax = plt.axes(projection='3d')
 
         x = [defShape[:, 0]]
@@ -277,7 +334,7 @@ for i in range(len(meshList)):
 
         ax.scatter3D(x, y, z, c=z, cmap='Greens')
         plt.show()
-
+        """
         # Re-associate points as average
         [modPerm, errIter, minidx, missed] = bidirectionalAssociation(modGT, defShape)
         d = np.abs(err - errIter)
