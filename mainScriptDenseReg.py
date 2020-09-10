@@ -162,11 +162,11 @@ landmarks3D = landmarks3D - npm.repmat(baric_avg, np.size(landmarks3D, axis=0), 
 frgcLm_buLips_gen = mat73.loadmat('data/landmarksFRGC_CVPR20_ver2.mat')
 frgcLm_buLips = frgcLm_buLips_gen.get('frgcLm_buLips')
 
-lm3dmm = idxLandmarks3D
+lm3dmm = idxLandmarks3D-1
 lm3dmm_all = lm3dmm
-lm3dmmGT = frgcLm_buLips
+lm3dmmGT = frgcLm_buLips-1
 lm3dmmGT_all = lm3dmmGT
-lm3dmmGT_all_vring = lm3dmmGT_all - 1
+lm3dmmGT_all_vring = lm3dmmGT_all
 
 # Compute ring-1 on landmarks
 avgModelMatlab = matlab.double(avgModel.tolist())
@@ -192,7 +192,7 @@ for i in range(len(meshList)):
     lmTGT = np.array(lmTGT._data.tolist()).reshape((3, 14)).T
     lmTGT = np.delete(lmTGT, 13, 0)
     # Select Landmarks and models Configuration
-    lm3dmm = idxLandmarks3D
+    lm3dmm = idxLandmarks3D -1
     lm3dmm_all = lm3dmm
     b = [19, 22, 25, 28, 31, 37, 34, 40, 13]
     lm3dmm = [lm3dmm[i] for i in b]
