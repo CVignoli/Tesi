@@ -76,28 +76,32 @@ def reassociateDuplicates(modGT, defShape):
     # Case for average model
     if np.size(modGT) == np.size(defShape):
         D = D + np.identity(np.size(D)) * sys.float_info.max
-    [mindists, minidx] = np.min(D)
-    [un, iidx, iun] = np.unique(minidx)
+    mindists = np.amin(D, axis=0)
+    minidx = np.argmin(D, axis=0)
+    [un, iidx] = np.unique(minidx, True)
 
-    iidxMiss = np.setdiff1d(np.size(defShape, axis=0), iidx)  # indici vanno bene??? Vedremo :)
-    df = defShape[iidx, :]
+    iidxMiss = np.setdiff1d(np.arange(1, np.size(defShape, 0)), iidx)  # indici vanno bene??? Vedremo :)
+    df = defShape[iidxMiss, :]
 
     modTmp = modGT
-    modPerm = []
+    modPerm =np.zeros((np.size(modGT, axis=0), 3))
     modPerm[iidx, :] = modTmp[un, :]
 
-    while df:
+    while np.size(df) !=0:
         # Remove unique vertices from gt
-        modTmp[un, :] = []
+        modTmp= np.delete(modTmp, un, 0)
         # Re-compute distances
         D = cdist(modTmp, df)
-        [_, minidx] = np.min(D)
-        [un, iidx, _] = np.unique(minidx)
+        minidx = np.argmin(D, axis=0)
+        [un, iidx] = np.unique(minidx, True)
 
         # Store new unique indices and remove from the old unique set
         iidx_n = iidxMiss[iidx]
-        iidxMiss[iidx] = []
-        df[iidx, :] = modTmp[un, :]
+        iidxMiss = np.delete(iidxMiss, iidx)
+        df = np.delete(df, iidx, 0)
+
+        # Add to the new model
+        modPerm[iidx_n, :] = modTmp[un, :]
 
     err = np.mean(mindists)
     return modPerm, err
@@ -360,17 +364,16 @@ for i in range(len(meshList)):
     mGT3 = o3d.geometry.PointCloud()
     mGT3.points = o3d.utility.Vector3dVector(modGT)
     o3d.io.write_point_cloud("dati pc/modGT3.ply", mGT3)
-    draw_point_cloud(mGT3, dShape)
     print('Figure 1: modGT in red and defShape in blue')
+    draw_point_cloud(mGT3, dShape)
     # ........................
 
     # Registered GT model building ...............
     print('Start Dense Registration routine')
-    modFinal = reassociateDuplicates(modGT, defShape)
+    modFinal, err = reassociateDuplicates(modGT, defShape)
     # ............
     print('Done!')
-
-    err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modFinal[lm3dmmGT_all, :])))
+    err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modFinal[lm3dmmGT_all.astype(int), :])))
     print('Mean Landmark error - ' + str(err_lm))
 
     # Debug ......................
