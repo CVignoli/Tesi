@@ -80,11 +80,11 @@ def reassociateDuplicates(modGT, defShape):
     minidx = np.argmin(D, axis=0)
     [un, iidx] = np.unique(minidx, True)
 
-    iidxMiss = np.setdiff1d(np.arange(1, np.size(defShape, 0)), iidx)  # indici vanno bene??? Vedremo :)
+    iidxMiss = np.setdiff1d(np.arange(0, np.size(defShape, 0)), iidx)  # indici vanno bene??? Vedremo :)
     df = defShape[iidxMiss, :]
 
     modTmp = modGT
-    modPerm =np.zeros((np.size(modGT, axis=0), 3))
+    modPerm =np.zeros((np.size(defShape, axis=0), 3))
     modPerm[iidx, :] = modTmp[un, :]
 
     while np.size(df) !=0:
@@ -117,11 +117,12 @@ def draw_registration_result(source, target, transformation):
     o3d.visualization.draw_geometries([source_temp, target_temp])
 
 
-def draw_point_cloud(source, target):
+def draw_point_cloud(source, target, window_name):
     source.paint_uniform_color([1, 0, 0])
     target.paint_uniform_color([0, 0, 1])
-    o3d.visualization.draw_geometries([source, target])
+    o3d.visualization.draw_geometries([source, target], window_name)
 
+op3d = o3d.visualization.Visualizer()
 mat_op = mo.Matrix_op
 _3DMM = _3DMM._3DMM()
 
@@ -316,7 +317,7 @@ for i in range(len(meshList)):
 
     # Re-align
 
-    iidx = np.setdiff1d(np.arange(1, np.size(defShape, 0)), missed)
+    iidx = np.setdiff1d(np.arange(0, np.size(defShape, 0)), missed)
     [A, S, R, trasl] = _3DMM.estimate_pose(modGT[minidx[iidx], :], defShape[iidx, :])
     modPerm = np.transpose(_3DMM.getProjectedVertex(modPerm, S, R, trasl))
     modGT = np.transpose(_3DMM.getProjectedVertex(modGT, S, R, trasl))
@@ -361,11 +362,27 @@ for i in range(len(meshList)):
 
 
     # Debug .............
+
     mGT3 = o3d.geometry.PointCloud()
     mGT3.points = o3d.utility.Vector3dVector(modGT)
     o3d.io.write_point_cloud("dati pc/modGT3.ply", mGT3)
-    print('Figure 1: modGT in red and defShape in blue')
-    draw_point_cloud(mGT3, dShape)
+
+    landmarks_defShape = defShape[lm3dmmGT.astype(int), :]
+    landmarksdShape = o3d.geometry.PointCloud()
+    landmarksdShape.points = o3d.utility.Vector3dVector(landmarks_defShape)
+    o3d.io.write_point_cloud("dati pc/landmarks_dShape.ply", landmarksdShape)
+
+    landmarks_modGT = modGT[lmidxGT.astype(int), :]
+    landmarksmodGT = o3d.geometry.PointCloud()
+    landmarksmodGT.points = o3d.utility.Vector3dVector(landmarks_modGT)
+    o3d.io.write_point_cloud("dati pc/landmarks_modGT.ply", landmarksmodGT)
+
+    print('Figure 1: landmarks in red and defShape in blue')
+    draw_point_cloud(landmarksdShape, dShape, 'Figure 1')
+
+    print('Figure 2: landmarks in red and modGT in blue')
+    draw_point_cloud(landmarksmodGT, mGT3, 'Figure 2')
+
     # ........................
 
     # Registered GT model building ...............
@@ -378,6 +395,13 @@ for i in range(len(meshList)):
 
     # Debug ......................
 
+    mFinal = o3d.geometry.PointCloud()
+    mFinal.points = o3d.utility.Vector3dVector(modFinal)
+    o3d.io.write_point_cloud("dati pc/mod_Final.ply", mFinal)
+    print('Figure 3: landmarks in red and modFinal in blue')
+    draw_point_cloud(landmarksmodGT, mFinal, 'Figure 3')
+    print('Figure 4: landmarks in red and modGT in blue')
+    draw_point_cloud(landmarksmodGT, mGT3, 'Figure 4')
     # ..................
 
     # Compute Final Error .............
