@@ -1,34 +1,23 @@
 from pathlib import Path
 from typing import List
 
-import matplotlib
-import notebook as notebook
-
 import _3DMM
 import Matrix_operations as mo
-import util_for_graphic as ufg
 import matlab.engine
-
-from matlab_utils import convert_ndarray_to_matlab
 
 eng = matlab.engine.start_matlab()
 eng.addpath(eng.genpath(r"toolboxes"))
 eng.addpath(eng.genpath(r"utils_gen"))
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-import glob
+
 import copy
 import mat73
 import scipy.io
 import open3d as o3d
-import h5py
 import numpy as np
 from scipy.spatial.distance import cdist
 import numpy.matlib as npm
 import sys
-import os
 
-#prova portatile git
 
 def remove_extensions(input_list: List) -> List:
     output_list = []
@@ -133,9 +122,6 @@ derr = 0.01
 maxIter = 30
 lambda_all = 1
 
-# Debugs
-debugMesh = True
-
 gtLandmarksPath = 'data/landmarks/'
 landmarkList = list(Path(gtLandmarksPath).glob("*.groundtruth.ldmk"))
 
@@ -150,6 +136,7 @@ components_R = mat_op(components, aligned_models_data)
 Components_res = components_R.X_res
 
 # Load 3DMM and Landmarks
+
 avgM = mat73.loadmat('data/avgModel_bh_1779_NE.mat')
 avgModel = avgM.get('avgModel')
 
@@ -159,6 +146,7 @@ model3 = scipy.io.loadmat('data/models/04681d145.mat')
 models = [model1, model2, model3]
 
 # Zero mean 3D model and landmarks
+
 idxLandmarks3D = avgM.get('idxLandmarks3D')
 idxLandmarks3D = np.delete(idxLandmarks3D, slice(17), 0)
 
@@ -169,6 +157,7 @@ avgModel = avgModel - npm.repmat(baric_avg, np.size(avgModel, axis=0), 1)
 landmarks3D = landmarks3D - npm.repmat(baric_avg, np.size(landmarks3D, axis=0), 1)
 
 # Load GT landmarks configuration
+
 frgcLm_buLips_gen = mat73.loadmat('data/landmarksFRGC_CVPR20_ver2.mat')
 frgcLm_buLips = frgcLm_buLips_gen.get('frgcLm_buLips')
 
@@ -179,6 +168,7 @@ lm3dmmGT_all = lm3dmmGT
 lm3dmmGT_all_vring = lm3dmmGT_all
 
 # Compute ring-1 on landmarks
+
 avgModelMatlab = matlab.double(avgModel.tolist())
 vring = eng.compute_vertex_ring(eng.compute_delaunay(avgModelMatlab))
 vring = np.array(vring)
@@ -213,15 +203,18 @@ for i in range(len(meshList)):
     if np.size(vertex, axis=0) < np.size(avgModel, axis=0):
         print(f'{i}  model with less vertices!')
         continue
+
     # ....................................
 
     # Zero mean GT model
 
     baric = np.mean(vertex, axis=0)
     modGT = vertex - npm.repmat(baric, np.size(vertex, axis=0), 1)
+
     # ..........................................
 
     # Find closest vertex in gt model for annotation error
+
     lmTGT = lmTGT - npm.repmat(baric, np.size(lmTGT, axis=0), 1)
     d = cdist(modGT, lmTGT)
     lmidxGT = np.argmin(d, axis=0)
@@ -233,46 +226,23 @@ for i in range(len(meshList)):
     defShape = avgModel
 
     # Initial ICP
+
     dShape = o3d.geometry.PointCloud()
     dShape.points = o3d.utility.Vector3dVector(defShape)
-    o3d.io.write_point_cloud("dati pc/defShape.ply", dShape)
+    o3d.io.write_point_cloud("3D point clouds/defShape.ply", dShape)
 
     mGT = o3d.geometry.PointCloud()
     mGT.points = o3d.utility.Vector3dVector(modGT)
-    o3d.io.write_point_cloud("dati pc/modGT.ply", mGT)
+    o3d.io.write_point_cloud("3D point clouds/modGT.ply", mGT)
+
     icp_result = o3d.registration.registration_icp(mGT, dShape, 15)
-    #draw_registration_result(mGT, dShape, icp_result.transformation)
+
     transf_vec = np.asarray(icp_result.transformation)
     Ricp = transf_vec[0:3, 0:3]
     Ticp = transf_vec[0:3, 3]
+
     modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
-    """
-    #see for results
-    
-    mGT1 = o3d.geometry.PointCloud()
-    mGT1.points = o3d.utility.Vector3dVector(modGT)
-    o3d.io.write_point_cloud("dati pc/modGT1.ply", mGT1)
-    #draw_registration_result(mGT1, dShape, icp_result.transformation)
-    """
 
-    """
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-
-    x = [defShape[:, 0]]
-    y = [defShape[:, 1]]
-    z = [defShape[:, 2]]
-
-    ax.scatter3D(x,y,z, color='r')
-
-
-    x1 = [modGT[:, 0]]
-    y1 = [modGT[:, 1]]
-    z1 = [modGT[:, 2]]
-
-    ax.scatter3D(x1, y1, z1, color='b')
-    plt.show()
-    """
     # Find noseTip
     
     nt = np.where(modGT[:, 2] == np.max(modGT[:, 2]))
@@ -280,38 +250,20 @@ for i in range(len(meshList)):
     modGT = modGT + ntTrasl
     
     #Refine ICP
+
     mGT1 = o3d.geometry.PointCloud()
     mGT1.points = o3d.utility.Vector3dVector(modGT)
-    o3d.io.write_point_cloud("dati pc/modGT1.ply", mGT1)
+    o3d.io.write_point_cloud("3D point clouds/modGT1.ply", mGT1)
+
     icp_result = o3d.registration.registration_icp(mGT1, dShape, 15)
-    # draw_registration_result(mGT, dShape, icp_result.transformation)
+
     transf_vec = np.asarray(icp_result.transformation)
     Ricp = transf_vec[0:3, 0:3]
     Ticp = transf_vec[0:3, 3]
     modGT = np.transpose(np.matmul(Ricp, modGT.T) + np.transpose(npm.repmat(Ticp, np.size(modGT, axis=0), 1)))
-    mGT2 = o3d.geometry.PointCloud()
-    mGT2.points = o3d.utility.Vector3dVector(modGT)
-    o3d.io.write_point_cloud("dati pc/modGT2.ply", mGT2)
 
-    """
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-
-    x = [defShape[:, 0]]
-    y = [defShape[:, 1]]
-    z = [defShape[:, 2]]
-
-    ax.scatter3D(x,y,z, color='r')
-
-
-    x1 = [modGT[:, 0]]
-    y1 = [modGT[:, 1]]
-    z1 = [modGT[:, 2]]
-
-    ax.scatter3D(x1, y1, z1, color='b')
-    plt.show()
-    """
     # Initial Association
+
     [modPerm, err, minidx, missed] = bidirectionalAssociation(modGT, defShape)
     err_init = err
 
@@ -322,28 +274,19 @@ for i in range(len(meshList)):
     modPerm = np.transpose(_3DMM.getProjectedVertex(modPerm, S, R, trasl))
     modGT = np.transpose(_3DMM.getProjectedVertex(modGT, S, R, trasl))
     print('Mean distance initialization: ' + str(err))
+
     # ..........................................................
 
     # NRF ....................................
+
     print('Start NRF routine')
     d = 1
     t = 1
-    alphas = []  # Keep for Recognition
-    alphas.append([])
     while t < maxIter and d > derr:
         # Fit the 3dmm
         alpha = _3DMM.alphaEstimation_fast_3D(defShape, modPerm, Components_res, np.arange(0, 6704), weights, lambda_all)
         defShape = np.transpose(_3DMM.deform_3D_shape_fast(np.transpose(defShape), components, alpha))
-        """
-        ax = plt.axes(projection='3d')
 
-        x = [defShape[:, 0]]
-        y = [defShape[:, 1]]
-        z = [defShape[:, 2]]
-
-        ax.scatter3D(x, y, z, c=z, cmap='Greens')
-        plt.show()
-        """
         # Re-associate points as average
         [modPerm, errIter, minidx, missed] = bidirectionalAssociation(modGT, defShape)
         d = np.abs(err - errIter)
@@ -354,41 +297,42 @@ for i in range(len(meshList)):
         print('Mean distance: ' + str(err) + ' - Mean Landmark error - ' + str(err_lm))
 
         # Iterate
-        t = t + 1
-        #alphas = np.append(alphas, alpha, axis=1)
-        #alphas = np.append(alphas, alpha, axis=1)
-        #alphas = np.append(alphas, alpha, axis=1)
-    # ...................
 
+        t = t + 1
+
+    # ...................
 
     # Debug .............
 
-    mGT3 = o3d.geometry.PointCloud()
-    mGT3.points = o3d.utility.Vector3dVector(modGT)
-    o3d.io.write_point_cloud("dati pc/modGT3.ply", mGT3)
+    mGT2 = o3d.geometry.PointCloud()
+    mGT2.points = o3d.utility.Vector3dVector(modGT)
+    o3d.io.write_point_cloud("3D point clouds/modGT2.ply", mGT2)
 
     landmarks_defShape = defShape[lm3dmmGT.astype(int), :]
     landmarksdShape = o3d.geometry.PointCloud()
     landmarksdShape.points = o3d.utility.Vector3dVector(landmarks_defShape)
-    o3d.io.write_point_cloud("dati pc/landmarks_dShape.ply", landmarksdShape)
+    o3d.io.write_point_cloud("3D point clouds/landmarks_dShape.ply", landmarksdShape)
 
     landmarks_modGT = modGT[lmidxGT.astype(int), :]
     landmarksmodGT = o3d.geometry.PointCloud()
     landmarksmodGT.points = o3d.utility.Vector3dVector(landmarks_modGT)
-    o3d.io.write_point_cloud("dati pc/landmarks_modGT.ply", landmarksmodGT)
+    o3d.io.write_point_cloud("3D point clouds/landmarks_modGT.ply", landmarksmodGT)
 
     print('Figure 1: landmarks in red and defShape in blue')
     draw_point_cloud(landmarksdShape, dShape, 'Figure 1')
 
     print('Figure 2: landmarks in red and modGT in blue')
-    draw_point_cloud(landmarksmodGT, mGT3, 'Figure 2')
+    draw_point_cloud(landmarksmodGT, mGT2, 'Figure 2')
 
     # ........................
 
     # Registered GT model building ...............
+
     print('Start Dense Registration routine')
     modFinal, err = reassociateDuplicates(modGT, defShape)
+
     # ............
+
     print('Done!')
     err_lm = np.mean(np.diag(cdist(modGT[lmidxGT_all, :], modFinal[lm3dmmGT_all.astype(int), :])))
     print('Mean Landmark error - ' + str(err_lm))
@@ -397,16 +341,13 @@ for i in range(len(meshList)):
 
     mFinal = o3d.geometry.PointCloud()
     mFinal.points = o3d.utility.Vector3dVector(modFinal)
-    o3d.io.write_point_cloud("dati pc/mod_Final.ply", mFinal)
+    o3d.io.write_point_cloud("3D point clouds/mod_Final.ply", mFinal)
     print('Figure 3: landmarks in red and modFinal in blue')
     draw_point_cloud(landmarksmodGT, mFinal, 'Figure 3')
     print('Figure 4: landmarks in red and modGT in blue')
-    draw_point_cloud(landmarksmodGT, mGT3, 'Figure 4')
-    # ..................
+    draw_point_cloud(landmarksmodGT, mGT2, 'Figure 4')
 
-    # Compute Final Error .............
-    #errLm_final = estimateRingError  # va implementata (riga 181)
-    # ....................
+    # ..................
 
     missingModels = [missingModels, meshList[i]]
 
